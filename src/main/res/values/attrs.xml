@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="GraphView">
+        <attr name="labelTextSize" format="dimension" />
+        <attr name="android:textSize" format="dimension" />
+        <attr name="android:dashGap" />
+        <attr name="android:dashWidth" />
+        <attr name="clickedTextSize" format="dimension" />
+        <attr name="blur" format="dimension" />
+        <attr name="elevation" format="dimension" />
+        <attr name="lineWidth" format="dimension" />
+        <attr name="guideStrokeWidth" format="dimension" />
+        <attr name="showStrokeWidth" format="dimension" />
+        <attr name="strokeWidth" format="dimension" />
+        <attr name="valuesRadius" format="dimension" />
+        <attr name="xAxisWidth" format="dimension" />
+        <attr name="mAlpha" format="integer" />
+        <attr name="touch" format="float" />
+    </declare-styleable>
+
+    <declare-styleable name="PieChart">
+        <attr name="showText" format="boolean" />
+        <attr name="labelPosition" format="enum">
+            <enum name="left" value="0" />
+            <enum name="right" value="1" />
+        </attr>
+    </declare-styleable>
+</resources>

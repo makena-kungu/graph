@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="default_elevation">4dp</dimen>
+    <dimen name="default_x_axis_width">1.5dp</dimen>
+    <dimen name="default_label_text_size">14sp</dimen>
+    <dimen name="default_blur">1dp</dimen>
+    <dimen name="default_clickedTextSize">12sp</dimen>
+    <dimen name="default_textSize">12sp</dimen>
+    <dimen name="default_stroke_width">1.5dp</dimen>
+    <dimen name="default_guideStrokeWidth">0.7dp</dimen>
+    <dimen name="default_show_stroke_width">1.5dp</dimen>
+    <dimen name="default_values_radius">5dp</dimen>
+    <dimen name="default_dashGap">3dp</dimen>
+    <dimen name="default_dashWidth">5dp</dimen>
+    <dimen name="default_graphArea_height">250dp</dimen>
+
+    <dimen name="medium_text_size">14sp</dimen>
+    <dimen name="large_text_size">16sp</dimen>
+</resources>
