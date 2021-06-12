@@ -17,8 +17,6 @@ import androidx.core.graphics.ColorUtils;
 
 import com.nemido.lib.R;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -120,7 +118,7 @@ public class PieChart extends View {
         List<Pie> pies = new ArrayList<>();
         int i = 0;
         for (int color : colors) {
-            Pie pie = new Pie(label + " " + ++i, BigDecimal.valueOf(Math.random()*10000));
+            Pie pie = new Pie(label + " " + ++i, Math.random()*10000);
             pie.color = color;
             pies.add(pie);
         }
@@ -268,7 +266,7 @@ public class PieChart extends View {
     }
 
     public void add(@NonNull Pie... pies) {
-        BigDecimal sum = BigDecimal.ZERO;
+        double sum = 0;
         Arrays.sort(pies);
         for (Pie pie : pies) {
             if (data.size() == 10) {
@@ -276,13 +274,12 @@ public class PieChart extends View {
                 break;
             }
             data.put(pie.getLabel(), pie);
-            sum = sum.add(pie.getValue());
+            sum += pie.value;
         }
 
 
         for (Pie pie : data.values()) {
-            pie.setPercentage(
-                    pie.getValue().divide(sum, RoundingMode.CEILING).floatValue(),
+            pie.setPercentage((float) (pie.value / sum),
                     data.size()
             );
         }
@@ -295,20 +292,20 @@ public class PieChart extends View {
 
     public static class Pie implements Parcelable, Comparable<Pie> {
         private final String label;
-        private final BigDecimal value;
+        private final double value;
         private float percentage;
         private float angle;
         private int color;
 
         private Pie(@NonNull Parcel in) {
             label = in.readString();
-            value = new BigDecimal(in.readString());
+            value = in.readDouble();
             percentage = in.readFloat();
             angle = in.readFloat();
             color = in.readInt();
         }
 
-        public Pie(String label, BigDecimal value) {
+        public Pie(String label, double value) {
             this.value = value;
             Locale l = getDefault();
             this.label = format(
@@ -322,7 +319,7 @@ public class PieChart extends View {
             return label;
         }
 
-        public BigDecimal getValue() {
+        public double getValue() {
             return value;
         }
 
@@ -358,7 +355,7 @@ public class PieChart extends View {
         @Override
         public void writeToParcel(@NonNull Parcel dest, int flags) {
             dest.writeString(label);
-            dest.writeString(value.toString());
+            dest.writeDouble(value);
             dest.writeFloat(percentage);
             dest.writeFloat(angle);
             dest.writeInt(color);
@@ -366,7 +363,11 @@ public class PieChart extends View {
 
         @Override
         public int compareTo(@NonNull Pie o) {
-            return this.getValue().compareTo(o.getValue());
+            return compare(this, o);
+        }
+
+        public static int compare(@NonNull Pie o1, @NonNull Pie o2) {
+            return Double.compare(o1.getValue(), o2.getValue());
         }
     }
 }

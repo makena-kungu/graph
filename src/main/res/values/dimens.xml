@@ -16,4 +16,7 @@
 
     <dimen name="medium_text_size">14sp</dimen>
     <dimen name="large_text_size">16sp</dimen>
+
+    <dimen name="mini_height">45dp</dimen>
+    <dimen name="mini_width">80dp</dimen>
 </resources>

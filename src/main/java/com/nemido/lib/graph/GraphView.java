@@ -1,6 +1,7 @@
 package com.nemido.lib.graph;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -49,6 +50,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static android.graphics.Color.BLACK;
 import static android.graphics.Color.BLUE;
 import static android.graphics.Color.CYAN;
 import static android.graphics.Color.DKGRAY;
@@ -117,8 +119,12 @@ public class GraphView extends View {
     public static final String FORMAT = "%.1f%s";
     private static final float COS_45 = (float) Math.cos(Math.toRadians(45));
 
+    private static final int NORMAL = 0;
+    private static final int MINI = 1;
+
     private final int graphAreaHeight;
     private final int labelGraphSpace = 40;
+    private final int size;
     private final float diameter;
     private final float elevation;
     private final float labelTextSize;
@@ -134,7 +140,10 @@ public class GraphView extends View {
     private final float radius, touch;
     private final int[] colors = new int[]{GREEN, RED, BLUE, CYAN, MAGENTA, YELLOW, /*ORANGE*/Color.parseColor("#FFA500"), DKGRAY, GRAY};
 
+
     private final AtomicBoolean touched = new AtomicBoolean(false);
+    private final AtomicInteger height = new AtomicInteger();
+    private final AtomicInteger width = new AtomicInteger();
     private final AtomicInteger columnHeight = new AtomicInteger();
     private final AtomicInteger rowHeight = new AtomicInteger();
     private final AtomicReference<String> selectedKey = new AtomicReference<>();
@@ -229,9 +238,8 @@ public class GraphView extends View {
 
         gTextPaint = new TextPaint(mTextPaint);
         gTextPaint.setAntiAlias(true);
-        gTextPaint.setColor(ColorUtils.setAlphaComponent(DKGRAY, 150));
+        gTextPaint.setColor(ColorUtils.setAlphaComponent(DKGRAY, 200));
         gTextPaint.setTextSize(textSize);
-        gTextPaint.setTypeface(Typeface.DEFAULT_BOLD);
 
         cTextPaint = new TextPaint(mTextPaint);
         cTextPaint.setAntiAlias(true);
@@ -257,12 +265,35 @@ public class GraphView extends View {
                 dashGap = a.getDimension(R.styleable.GraphView_android_dashGap, getResources().getDimension(R.dimen.default_dashGap));
         mXLine.setPathEffect(new DashPathEffect(new float[]{dashWidth, dashGap}, 0));
 
+        size = a.getInt(R.styleable.GraphView_size, NORMAL);
+
         a.recycle();
 
         detector = new GestureDetector(context, new GestureListener());
         areaPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         areaPaint.setStyle(Paint.Style.FILL);
     }
+
+    /*void dummy(Period p) {
+        final int duration = p.getDuration();
+        setPeriod(p);
+        final List<Line> lines = new ArrayList<>();
+        int i = 0;
+        int arr = 1;
+
+        while (i < arr) {
+            int j = 0;
+            Line line = new Line("label" + i, i++%2 == 0);
+            while (j < duration) {
+                line.add(++j, Math.random()*1000);
+            }
+            lines.add(line);
+        }
+
+        add(lines);
+        test = true;
+
+    }*/
 
     @SuppressWarnings("unused")
     public void setCompareListener(CompareListener listener) {
@@ -279,23 +310,61 @@ public class GraphView extends View {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         //final int count = isSelected.get() ? 1 : lineList.size();
         //ensures multiplier is never greater than 3 which is the max number of rows allowed
-        final int m = 1;
 
-        //finding the column height
-        //firstly measure the height of any random text
-        final String random = "This Sample typo";
-        final float initialTS = mTextPaint.getTextSize();
-        mTextPaint.setTextSize(labelTextSize);
-        mTextPaint.getTextBounds(random, 0, random.length(), textRect);
-        mTextPaint.setTextSize(initialTS);
+        if (size == NORMAL) {
+            final int m = 1;
 
-        //we add a padding of 5 at the top an at the bottom
-        rowHeight.set(textRect.height() + 20);
-        columnHeight.set(rowHeight.get()*m);
-        int height = columnHeight.get();
-        height += graphAreaHeight + labelGraphSpace;
-        int width = MeasureSpec.getSize(widthMeasureSpec);
-        setMeasuredDimension(width, height);
+            //finding the column height
+            //firstly measure the height of any random text
+            final String random = "This Sample typo";
+            final float initialTS = mTextPaint.getTextSize();
+            mTextPaint.setTextSize(labelTextSize);
+            mTextPaint.getTextBounds(random, 0, random.length(), textRect);
+            mTextPaint.setTextSize(initialTS);
+
+            //we add a padding of 5 at the top an at the bottom
+            rowHeight.set(textRect.height() + 20);
+            columnHeight.set(rowHeight.get()*m);
+            height.set(columnHeight.get() + graphAreaHeight + labelGraphSpace);
+            width.set(MeasureSpec.getSize(widthMeasureSpec));
+        } else if (size == MINI) {
+            getDimension(width, height);
+            width.set(resolveAdjustedSize(width.get(), widthMeasureSpec));
+            height.set(resolveAdjustedSize(height.get(), heightMeasureSpec));
+        }
+        setMeasuredDimension(width.get(), height.get());
+    }
+
+    private static int resolveAdjustedSize(int desiredSize, int measureSpec) {
+        int result;
+
+        final int specMode = MeasureSpec.getMode(measureSpec);
+        final int specSize = MeasureSpec.getSize(measureSpec);
+        switch (specMode) {
+            case MeasureSpec.UNSPECIFIED:
+                //can be as big as we want
+                result = desiredSize;
+                break;
+            case MeasureSpec.AT_MOST:
+                result = Math.min(desiredSize, specSize);
+                break;
+            case MeasureSpec.EXACTLY:
+                result = specSize;
+                break;
+            default:
+                throw new IllegalArgumentException();
+        }
+
+        return result;
+    }
+
+    private void getDimension(AtomicInteger width, AtomicInteger height) {
+        Resources res = getResources();
+
+        //if this method is called then the size ought to be MINI
+        height.set(res.getDimensionPixelSize(R.dimen.mini_height));
+        width.set(res.getDimensionPixelSize(R.dimen.mini_width));
+
     }
 
     @Override
@@ -311,33 +380,36 @@ public class GraphView extends View {
 
         //All the measuring'll take place here since all the addition has already occurred
         //set columns heights and widths
-        columnBounds.set(mRect);
-        final long round = round(Math.floor(w*0.6f));
-        columnBounds.right = columnBounds.left + round/2.0f;
-        columnBounds.bottom = columnBounds.top + (columnHeight.get());
-        rowBounds.set(0, 0, columnBounds.width(), rowHeight.get());
+        if (size == NORMAL) {
+            columnBounds.set(mRect);
+            final long round = round(Math.floor(w*0.6f));
+            columnBounds.right = columnBounds.left + round/2.0f;
+            columnBounds.bottom = columnBounds.top + (columnHeight.get());
+            rowBounds.set(0, 0, columnBounds.width(), rowHeight.get());
 
-        float space = rowBounds.height();
-        indicator.set(0, 0, space, space);
-        //Center the indicator in the rowBounds
-        final float v = (space - diameter)/2;
-        indicator.inset(v, v);
+            float space = rowBounds.height();
+            indicator.set(0, 0, space, space);
+            //Center the indicator in the rowBounds
+            final float v = (space - diameter)/2;
+            indicator.inset(v, v);
 
-        //add labels to the labels list
-        //if the current max is the same as the previous one then no need to reallocate
-
+            //add labels to the labels list
+            //if the current max is the same as the previous one then no need to reallocate
+        }
         computeBounds();
         labels();
     }
 
     @Override
     public boolean onTouchEvent(@NonNull MotionEvent event) {
-        boolean result = detector.onTouchEvent(event);
-        if (result) {
-            performClick();
-            invalidate();
-        }
-        return result;
+        if (size == NORMAL) {
+            boolean result = detector.onTouchEvent(event);
+            if (result) {
+                performClick();
+                invalidate();
+            }
+            return result;
+        } else return false;
     }
 
     @Override
@@ -348,7 +420,6 @@ public class GraphView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        Log.d(TAG, "onDraw: started");
         //canvas.save();
         //canvas.rotate(180, width/2, height/2);
 
@@ -363,9 +434,11 @@ public class GraphView extends View {
             }
         }
 
-        labels(canvas);
+        if (size == NORMAL) {
+            labels(canvas);
 
-        guides(canvas);
+            guides(canvas);
+        }
 
         graph(canvas);
     }
@@ -418,10 +491,9 @@ public class GraphView extends View {
     void guides(Canvas c) {
         final ListIterator<String> iterator = labels.listIterator();
         if (!iterator.hasNext()) return;
-        generatePath();
+        //generatePath();
         //NOTE: -THE DRAW IS FROM BOTTOM UPWARDS
         gTextPaint.setTextSize(textSize);
-
 
         final int saveCount = c.save();
         c.translate(bounds.left, bounds.bottom);
@@ -480,12 +552,18 @@ public class GraphView extends View {
             c.drawPath(l.areaUnderGraph, areaPaint);
         }
 
+        float x = getWidth()*.25f;
+        float y = getHeight()*-.25f;
+        c.drawText("" + f, x, y, mTextPaint);
+
         touched(c);
 
         c.restore();
     }
 
     void touched(@NonNull Canvas c) {
+        if (size == MINI)
+            return;
         if (bests.isEmpty() || tLabels.isEmpty()) {
             return;
         }
@@ -509,17 +587,25 @@ public class GraphView extends View {
 
         int i = 0;
         final int size = tLabels.size();
-        final float textBottom = (tRectF.height()/tLabels.size() + 24)*.5f;
+        final float interval = tRectF.height()/tLabels.size();
+        //final float textBottom = (tRectF.height()/tLabels.size() + 24)*.5f;
         while (i < size) {
             final String label = tLabels.get(i);
             cTextPaint.getTextBounds(label, 0, label.length(), tRect);
             tRect.offsetTo(0, 0);
-            c.translate(0,
-                    textBottom + (abs(textBottom - tRectF.height()/tLabels.size())*.5f));
+            float diff = interval - tRect.height();
+            diff /= 2;
+            tRect.offset(0, (int) diff);
+            c.translate(0, tRect.bottom);
+
+            /*c.translate(0,
+                    textBottom + (abs(textBottom - tRectF.height()/tLabels.size())*.5f));*/
 
             if (i == size - 1 || size == 2) {
                 //drawing the date i.e. the first label
-                cTextPaint.setTypeface(Typeface.DEFAULT_BOLD);
+                //cTextPaint.setTypeface(Typeface.DEFAULT_BOLD);
+                cTextPaint.setTypeface(Typeface.DEFAULT);
+                cPaint.setColor(BLACK);
                 c.drawText(label, 0, 0, cTextPaint);
             } else {
                 final String[] split = label.split(Best.splitter);
@@ -548,25 +634,57 @@ public class GraphView extends View {
     }
 
     public void add(@NonNull Collection<Line> lines) {
-        Log.d(TAG, "add: 1st started");
         clear();
         add(lines.toArray(new Line[0]));
 
     }
+
+    int f;
 
     public void add(@NonNull Line... lines) {
         if (lines.length <= 0) return;
 
         int i = 0;
         final int len = lines.length;
-        final int size = lineMap.size();
+        final int mapSize = lineMap.size();
         while (i < len) {
             Line line = lines[i];
-            line.color = colors[i + (size > 0 ? (size - 1) : 0)];
-            if (size == 5) {
+            line.color = colors[i + (mapSize > 0 ? (mapSize - 1) : 0)];
+            if (mapSize == 5) {
                 return;
             }
             Collections.sort(line.points, GraphView::compare);
+
+            //a data set of more than 30 units on the x axis tends to create an unclear line graph
+            //thus divide a set into observable portions.
+
+            if (size == MINI) {
+                if (period.getDuration() > Period.ofMonth().getDuration()) {
+                    try {
+                        final int countOfMonths = period.getDuration()/Period.ofMonth().getDuration();
+                        final int length = line.points.size();
+                        int j = 0;
+
+                        List<PointF> points = new ArrayList<>();
+                        while (j < length) {
+                            int k = 0;
+                            float sum = 0f;
+                            while (k < countOfMonths) {
+                                sum += line.points.get(j++).y;
+                                k++;
+                            }
+                            points.add(new PointF(j, sum/countOfMonths));
+                        }
+
+                        line.points.clear();
+                        line.points.addAll(points);
+                        f = line.points.size();
+                    } catch (IndexOutOfBoundsException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
             if (line.maxx() > max.x) {
                 max.x = line.maxx;
             }
@@ -577,6 +695,7 @@ public class GraphView extends View {
             i++;
         }
 
+
         computeBounds();
         invalidate();
         requestLayout();
@@ -585,10 +704,12 @@ public class GraphView extends View {
     private void computeBounds() {
         bounds.set(mRect);
 
-        bounds.top += columnHeight.get()*lineMap.size() + labelGraphSpace;
-        bounds.bottom -= textSize + 5;
-        //compensate for the transition that's made
-        bounds.right -= ((float) getWidth() - bounds.right);
+        if (size == NORMAL) {
+            bounds.top += columnHeight.get()*lineMap.size() + labelGraphSpace;
+            bounds.bottom -= textSize + 5;
+            //compensate for the transition that's made
+            bounds.right -= ((float) getWidth() - bounds.right);
+        }
     }
 
     public void setPeriod(Period p) {
@@ -606,7 +727,6 @@ public class GraphView extends View {
         float max = Collections.max(lineMap.values(), (o1, o2) -> Float.compare(o1.maxy, o2.maxy)).maxy;
         if (max != maximum)
             maximum = max;
-
 
         labels();
         generatePath();
@@ -687,7 +807,7 @@ public class GraphView extends View {
 
         cTextPaint.setTypeface(Typeface.DEFAULT_BOLD);
         cTextPaint.getTextBounds(max, 0, max.length(), tRect);
-        tRect.bottom += 5;//5 is the space btn the vals
+        tRect.bottom += 5;//5 is the padding btn the vals i.e there'll be 2.5 space
         cTextPaint.setTypeface(null);
 
         final int count = tLabels.size();
@@ -697,12 +817,13 @@ public class GraphView extends View {
         tRectF.top = y(touchedVal.y) > cy ? cy : weirdBounds.top;
         tRectF.left = x(touchedVal.x);
         tRectF.right = tRectF.left + width;
-        tRectF.bottom = tRectF.top + height - 5;//5 is removing the space at the bottom...
+        tRectF.bottom = tRectF.top + height/*- 5*/;//5 is removing the space at the bottom...
 
         //center the rect along the x-axis to the touched val
         tRectF.offset(-tRectF.width()*.5f, 0);
         //ensure the rect is within bounds
 
+        //this is the "container used to draw the bounds with the shadow
         rect.set(tRectF);
         float v = 5, h = 10;
         rect.inset(-(padding + h), -(padding + v));
@@ -850,6 +971,8 @@ public class GraphView extends View {
     }
 
     void labels() {
+        if (size == MINI) return;
+
         if (Float.compare(previousMax, maximum) != 0) {
             labels.clear();
             final String f = "0";
@@ -988,6 +1111,7 @@ public class GraphView extends View {
         private final Path line = new Path();
         private final Path areaUnderGraph = new Path();
 
+        @SuppressWarnings("unused")
         public Line() {
         }
 

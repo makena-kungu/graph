@@ -15,6 +15,10 @@
         <attr name="valuesRadius" format="dimension" />
         <attr name="xAxisWidth" format="dimension" />
         <attr name="mAlpha" format="integer" />
+        <attr name="size">
+            <enum name="normal" value="0"/>
+            <enum name="mini" value="1" />
+        </attr>
         <attr name="touch" format="float" />
     </declare-styleable>
 
