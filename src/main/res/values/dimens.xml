@@ -6,7 +6,7 @@
     <dimen name="default_blur">1dp</dimen>
     <dimen name="default_clickedTextSize">12sp</dimen>
     <dimen name="default_textSize">12sp</dimen>
-    <dimen name="default_stroke_width">1.5dp</dimen>
+    <dimen name="default_stroke_width">2dp</dimen>
     <dimen name="default_guideStrokeWidth">0.7dp</dimen>
     <dimen name="default_show_stroke_width">1.5dp</dimen>
     <dimen name="default_values_radius">5dp</dimen>
@@ -19,4 +19,8 @@
 
     <dimen name="mini_height">45dp</dimen>
     <dimen name="mini_width">80dp</dimen>
+
+    <dimen name="heightOfValues">38sp</dimen>
+    <dimen name="initialPadding">3dp</dimen>
+    <dimen name="margin">20dp</dimen>
 </resources>

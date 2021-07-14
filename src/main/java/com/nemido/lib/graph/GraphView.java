@@ -23,11 +23,15 @@ import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewParent;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.graphics.ColorUtils;
 
+import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.snackbar.Snackbar;
 import com.nemido.lib.R;
 import com.nemido.lib.ShadowRenderer;
 import com.nemido.lib.utils.Period;
@@ -121,10 +125,17 @@ public class GraphView extends View {
 
     private static final int NORMAL = 0;
     private static final int MINI = 1;
+    private static final int CUSTOM = 2;
 
+    public static final int NONE = -1;
+    public static final int BIG = 0;
+    public static final int SMALL = 1;
+
+    private final boolean decoOn;
     private final int graphAreaHeight;
     private final int labelGraphSpace = 40;
     private final int size;
+    private final int theHeight;
     private final float diameter;
     private final float elevation;
     private final float labelTextSize;
@@ -266,6 +277,9 @@ public class GraphView extends View {
         mXLine.setPathEffect(new DashPathEffect(new float[]{dashWidth, dashGap}, 0));
 
         size = a.getInt(R.styleable.GraphView_size, NORMAL);
+        theHeight = a.getInt(R.styleable.GraphView_height, NONE);
+        decoOn = a.getBoolean(R.styleable.GraphView_decorationsOn,
+                size != MINI || theHeight == NONE);
 
         a.recycle();
 
@@ -310,27 +324,46 @@ public class GraphView extends View {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         //final int count = isSelected.get() ? 1 : lineList.size();
         //ensures multiplier is never greater than 3 which is the max number of rows allowed
+        switch (size) {
+            case NORMAL:
+                final int m = 1;
 
-        if (size == NORMAL) {
-            final int m = 1;
+                //finding the column height
+                //firstly measure the height of any random text
+                final String random = "This Sample typo";
+                final float initialTS = mTextPaint.getTextSize();
+                mTextPaint.setTextSize(labelTextSize);
+                mTextPaint.getTextBounds(random, 0, random.length(), textRect);
+                mTextPaint.setTextSize(initialTS);
 
-            //finding the column height
-            //firstly measure the height of any random text
-            final String random = "This Sample typo";
-            final float initialTS = mTextPaint.getTextSize();
-            mTextPaint.setTextSize(labelTextSize);
-            mTextPaint.getTextBounds(random, 0, random.length(), textRect);
-            mTextPaint.setTextSize(initialTS);
+                //we add a padding of 5 at the top an at the bottom
+                rowHeight.set(textRect.height() + 20);
+                columnHeight.set(rowHeight.get()*m);
+                height.set(columnHeight.get() + graphAreaHeight + labelGraphSpace);
+                width.set(MeasureSpec.getSize(widthMeasureSpec));
+                break;
+            case MINI:
+                getDimension(width, height);
+                width.set(resolveAdjustedSize(width.get(), widthMeasureSpec));
+                height.set(resolveAdjustedSize(height.get(), heightMeasureSpec));
+                break;
+            case CUSTOM:
+                if (theHeight == BIG) {
+                    width.set(resolveAdjustedSize(width.get(), widthMeasureSpec));
+                    height.set(resolveAdjustedSize(height.get(), heightMeasureSpec));
+                } else if (theHeight == SMALL) {
+                    final ViewGroup containerCard = findContainerCard(this);
+                    int h = containerCard.getHeight();
+                    h *= 2;
+                    h /= 3;
+                    //find the heights of all other components within the container and subtract them
+                    // from the h to get the height of the graph
+                    h -= removeHeight(containerCard);
 
-            //we add a padding of 5 at the top an at the bottom
-            rowHeight.set(textRect.height() + 20);
-            columnHeight.set(rowHeight.get()*m);
-            height.set(columnHeight.get() + graphAreaHeight + labelGraphSpace);
-            width.set(MeasureSpec.getSize(widthMeasureSpec));
-        } else if (size == MINI) {
-            getDimension(width, height);
-            width.set(resolveAdjustedSize(width.get(), widthMeasureSpec));
-            height.set(resolveAdjustedSize(height.get(), heightMeasureSpec));
+                    width.set(resolveAdjustedSize(width.get(), widthMeasureSpec));
+                    height.set(resolveAdjustedSize(h, heightMeasureSpec));
+                }
+                break;
         }
         setMeasuredDimension(width.get(), height.get());
     }
@@ -346,6 +379,7 @@ public class GraphView extends View {
                 result = desiredSize;
                 break;
             case MeasureSpec.AT_MOST:
+                //The views size is strictly constraint to this size by the parent view
                 result = Math.min(desiredSize, specSize);
                 break;
             case MeasureSpec.EXACTLY:
@@ -358,13 +392,46 @@ public class GraphView extends View {
         return result;
     }
 
-    private void getDimension(AtomicInteger width, AtomicInteger height) {
+    private void getDimension(@NonNull AtomicInteger width, @NonNull AtomicInteger height) {
         Resources res = getResources();
 
         //if this method is called then the size ought to be MINI
         height.set(res.getDimensionPixelSize(R.dimen.mini_height));
         width.set(res.getDimensionPixelSize(R.dimen.mini_width));
+    }
 
+    private static ViewGroup findContainerCard(View view) {
+        ViewGroup f;
+        do {
+            if (view instanceof MaterialCardView) {
+                return (ViewGroup) view;
+            } else {
+                f = (ViewGroup) view;
+            }
+
+            //going up the hierarchy to find the container card
+            final ViewParent parent = view.getParent();
+            view = parent instanceof View ? (View) parent : null;
+        } while (view != null);
+
+        return f;
+    }
+
+    private static int removeHeight(@NonNull View view) {
+        int h = 0;
+
+        //the initial view is the MaterialCardView so we go down the hierarchy again to find the
+        // height of the views in the
+        h += view.getResources().getDimensionPixelSize(R.dimen.heightOfValues);
+        h += view.getResources().getDimensionPixelSize(R.dimen.initialPadding);
+        h += view.getResources().getDimensionPixelSize(R.dimen.margin);
+        if (view instanceof MaterialCardView) {
+            MaterialCardView v = (MaterialCardView) view;
+            h += v.getContentPaddingTop() +
+                    v.getContentPaddingBottom();
+        }
+
+        return h;
     }
 
     @Override
@@ -562,8 +629,8 @@ public class GraphView extends View {
     }
 
     void touched(@NonNull Canvas c) {
-        if (size == MINI)
-            return;
+        if (size != NORMAL) return;
+
         if (bests.isEmpty() || tLabels.isEmpty()) {
             return;
         }
@@ -658,7 +725,7 @@ public class GraphView extends View {
             //a data set of more than 30 units on the x axis tends to create an unclear line graph
             //thus divide a set into observable portions.
 
-            if (size == MINI) {
+            if (size == MINI || size == CUSTOM) {
                 if (period.getDuration() > Period.ofMonth().getDuration()) {
                     try {
                         final int countOfMonths = period.getDuration()/Period.ofMonth().getDuration();
@@ -971,7 +1038,7 @@ public class GraphView extends View {
     }
 
     void labels() {
-        if (size == MINI) return;
+        if (size != NORMAL) return;
 
         if (Float.compare(previousMax, maximum) != 0) {
             labels.clear();
