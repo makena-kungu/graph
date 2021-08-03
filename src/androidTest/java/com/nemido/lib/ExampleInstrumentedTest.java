@@ -1,6 +1,8 @@
 package com.nemido.lib;
 
 import android.content.Context;
+import android.text.SpannableString;
+import android.text.style.BulletSpan;
 
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -22,5 +24,23 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
         assertEquals("com.nemido.graphs.test", appContext.getPackageName());
+    }
+
+    @Test
+    public void testBullet() {
+        String s = "";
+        final String some = "Some Text\n";
+        int length = some.length();
+        for (int i = 0; i < 10; i++) {
+            s = s.concat(some);
+        }
+
+        SpannableString ss = new SpannableString(some);
+        int j = 0;
+        do {
+            ss.setSpan(new BulletSpan(), j, j+length, SpannableString.SPAN_INCLUSIVE_INCLUSIVE);
+            j += length;
+        }while(j<length);
+        System.out.println(ss);
     }
 }

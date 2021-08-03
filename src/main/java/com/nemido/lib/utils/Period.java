@@ -258,6 +258,14 @@ public class Period implements Parcelable {
         return time(value, this);
     }
 
+    /**
+     * Extract a date value from a given period and with the value(count of the date within the
+     * period) that's being given.
+     *
+     * @param value the value of date in the period
+     * @param p the period instance from which to extract the date
+     * @return the date extracted
+     */
     public static long time(int value, Period p) {
         final Calendar c = getInstance();
         switch (p.unit) {

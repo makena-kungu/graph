@@ -1,5 +1,7 @@
 package com.nemido.lib.utils;
 
+import androidx.annotation.NonNull;
+
 public enum ChronoUnit {
     DAY("Day"),
     WEEK("Week"),
@@ -22,6 +24,7 @@ public enum ChronoUnit {
     }
 
     @Override
+    @NonNull
     public String toString() {
         return name;
     }

@@ -1,5 +1,8 @@
 package com.nemido.lib;
 
+import android.text.SpannableString;
+import android.text.style.BulletSpan;
+
 import com.nemido.lib.utils.Period;
 
 import org.junit.Test;
@@ -105,5 +108,23 @@ public class ExampleUnitTest {
 
         Period p1 = Period.ofSemi();
         System.out.println(p1.getDuration());
+    }
+
+    @Test
+    public void testBullet() {
+        String s = "";
+        final String some = "Some Text\n";
+        int length = some.length();
+        for (int i = 0; i < 10; i++) {
+            s = s.concat(some);
+        }
+
+        SpannableString ss = new SpannableString(some);
+        int j = 0;
+        do {
+            ss.setSpan(new BulletSpan(), j, j+length, SpannableString.SPAN_INCLUSIVE_INCLUSIVE);
+            j += length;
+        }while(j<length);
+        System.out.println(ss);
     }
 }
