@@ -31,7 +31,6 @@ import androidx.annotation.Nullable;
 import androidx.core.graphics.ColorUtils;
 
 import com.google.android.material.card.MaterialCardView;
-import com.google.android.material.snackbar.Snackbar;
 import com.nemido.lib.R;
 import com.nemido.lib.ShadowRenderer;
 import com.nemido.lib.utils.Period;
@@ -713,14 +712,13 @@ public class GraphView extends View {
 
         int i = 0;
         final int len = lines.length;
-        final int mapSize = lineMap.size();
         while (i < len) {
+            final int mapSize = lineMap.size();
             Line line = lines[i];
             line.color = colors[i + (mapSize > 0 ? (mapSize - 1) : 0)];
             if (mapSize == 5) {
                 return;
             }
-            Collections.sort(line.points, GraphView::compare);
 
             //a data set of more than 30 units on the x axis tends to create an unclear line graph
             //thus divide a set into observable portions.
@@ -752,10 +750,10 @@ public class GraphView extends View {
                 }
             }
 
-            if (line.maxx() > max.x) {
+            if (line.maxx > max.x) {
                 max.x = line.maxx;
             }
-            if (line.maxy() > max.y) {
+            if (line.maxy > max.y) {
                 max.y = line.maxy;
             }
             lineMap.put(line.label, line);
@@ -1172,19 +1170,17 @@ public class GraphView extends View {
         public String label;
         private float maxx;
         private float maxy;
-        private final List<PointF> points = new ArrayList<>();
+        private final List<PointF> points;
+
         private int color;
 
         private final Path line = new Path();
         private final Path areaUnderGraph = new Path();
 
-        @SuppressWarnings("unused")
-        public Line() {
-        }
-
-        public Line(String label, boolean hasCurrency) {
+        private Line(String label, boolean hasCurrency, List<PointF> points) {
             this.hasCurrency = hasCurrency;
             this.label = label;
+            this.points = points;
         }
 
         protected Line(@NonNull Parcel in) {
@@ -1195,6 +1191,7 @@ public class GraphView extends View {
             label = in.readString();
             maxx = in.readFloat();
             maxy = in.readFloat();
+            points = new ArrayList<>();
             in.readTypedList(points, PointF.CREATOR);
             color = in.readInt();
         }
@@ -1289,12 +1286,11 @@ public class GraphView extends View {
             divisor.set((long) Math.pow(10, counter));
         }*/
 
-        private float maxx() {
+        private void maxx() {
             maxx = points.get(points.size() - 1).x;
-            return maxx;
         }
 
-        private float maxy() {
+        private void maxy() {
             float max = Collections.max(points, (o1, o2) -> Float.compare(o1.y, o2.y)).y;
 
             //Ceil the float into an integer so as to get the whole numbers size which
@@ -1315,7 +1311,6 @@ public class GraphView extends View {
                 maxy = (float) (ceil(max/multiplicand)*multiplicand);
             } while (max/maxy < 0.8);
 
-            return maxy;
         }
 
         public static final Creator<Line> CREATOR = new Creator<Line>() {
@@ -1349,6 +1344,66 @@ public class GraphView extends View {
             dest.writeFloat(maxy);
             dest.writeTypedList(points);
             dest.writeInt(color);
+        }
+
+        @SuppressWarnings("unused")
+        public static class Builder {
+            private String label;
+            private int color;
+            private boolean hasCurrency;
+
+            private final List<PointF> ps = new ArrayList<>();
+
+            public Builder setLabel(String label) {
+                this.label = label;
+                return this;
+            }
+
+            public Builder setColor(int color) {
+                this.color = color;
+                return this;
+            }
+
+            public Builder setHasCurrency() {
+                return setHasCurrency(true);
+            }
+
+            public Builder setHasCurrency(boolean hasCurrency) {
+                this.hasCurrency = hasCurrency;
+                return this;
+            }
+
+            public Builder add(PointF p) {
+                ps.add(p);
+                return this;
+            }
+
+            public Builder add(float x, float y) {
+                ps.add(new PointF(x, y));
+                return this;
+            }
+
+            public Builder add(PointF... points) {
+                Collections.addAll(ps, points);
+                return this;
+            }
+
+            public Builder set(PointF... pointFS) {
+                ps.clear();
+                Collections.addAll(ps, pointFS);
+                return this;
+            }
+
+            public Line build() {
+                final Line line = new Line(label, hasCurrency, ps);
+
+                line.color = color;
+
+                Collections.sort(line.points, GraphView::compare);
+                line.maxx();
+                line.maxy();
+                return line;
+            }
         }
     }
 

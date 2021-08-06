@@ -254,6 +254,14 @@ public class Period implements Parcelable {
         return 12/value;
     }
 
+    public long getStart() {
+        return start;
+    }
+
+    public long getEnd() {
+        return end;
+    }
+
     public long time(int value) {
         return time(value, this);
     }
@@ -266,7 +274,7 @@ public class Period implements Parcelable {
      * @param p the period instance from which to extract the date
      * @return the date extracted
      */
-    public static long time(int value, Period p) {
+    public static long time(int value, @NonNull Period p) {
         final Calendar c = getInstance();
         switch (p.unit) {
             case DAY:
