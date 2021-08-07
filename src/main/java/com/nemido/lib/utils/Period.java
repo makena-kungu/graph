@@ -1,13 +1,5 @@
 package com.nemido.lib.utils;
 
-import android.os.Parcel;
-import android.os.Parcelable;
-
-import androidx.annotation.NonNull;
-
-import java.time.Duration;
-import java.util.Calendar;
-
 import static com.nemido.lib.utils.ChronoUnit.ANNUAL;
 import static com.nemido.lib.utils.ChronoUnit.DAY;
 import static com.nemido.lib.utils.ChronoUnit.MAX;
@@ -19,6 +11,17 @@ import static java.util.Calendar.DAY_OF_MONTH;
 import static java.util.Calendar.DAY_OF_WEEK;
 import static java.util.Calendar.DAY_OF_YEAR;
 import static java.util.Calendar.getInstance;
+
+import android.os.Parcel;
+import android.os.Parcelable;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import org.jetbrains.annotations.Contract;
+
+import java.time.Duration;
+import java.util.Calendar;
 
 public class Period implements Parcelable {
     public ChronoUnit unit;
@@ -52,21 +55,21 @@ public class Period implements Parcelable {
     };
 
     @NonNull
-    private static Period create(ChronoUnit u, long start, long end) {
-        return new Period(u, start, end);
+    public static Period create(ChronoUnit chronoUnit, long start, long end) {
+        return new Period(chronoUnit, start, end);
     }
 
     @NonNull
-    private static Period create(int field, ChronoUnit p, long time) {
+    private static Period create(int field, ChronoUnit chronoUnit, long time) {
         final Calendar c = getInstance();
         c.setTimeInMillis(time);
         c.set(field, c.getActualMinimum(field));
-        min(c, p);
+        min(c, chronoUnit);
         long start = c.getTimeInMillis();
         reset(c);
         c.set(field, c.getActualMaximum(field));
-        max(c, p);
-        return create(p, start, c.getTimeInMillis());
+        max(c, chronoUnit);
+        return create(chronoUnit, start, c.getTimeInMillis());
     }
 
     @NonNull
@@ -86,6 +89,29 @@ public class Period implements Parcelable {
         unit = period.unit;
         start = period.start;
         end = period.end;
+    }
+
+    @Nullable
+    @Contract(pure = true)
+    public static Period ofUnit(@NonNull ChronoUnit u, long date) {
+        switch (u) {
+            default:
+            case HOUR:
+            case MAX:
+                return null;
+            case DAY:
+                return ofDay(date);
+            case WEEK:
+                return ofWeek(date);
+            case MONTH:
+                return ofMonth(date);
+            case QUARTER:
+                return ofQuarter(date);
+            case SEMI_ANNUAL:
+                return ofSemi(date);
+            case ANNUAL:
+                return ofYear(date);
+        }
     }
 
     @NonNull
@@ -254,11 +280,11 @@ public class Period implements Parcelable {
         return 12/value;
     }
 
-    public long getStart() {
+    public long start() {
         return start;
     }
 
-    public long getEnd() {
+    public long end() {
         return end;
     }
 

@@ -1,5 +1,21 @@
 package com.nemido.lib.graph;
 
+import static android.graphics.Color.BLACK;
+import static android.graphics.Color.BLUE;
+import static android.graphics.Color.CYAN;
+import static android.graphics.Color.DKGRAY;
+import static android.graphics.Color.GRAY;
+import static android.graphics.Color.GREEN;
+import static android.graphics.Color.MAGENTA;
+import static android.graphics.Color.RED;
+import static android.graphics.Color.YELLOW;
+import static java.lang.Math.abs;
+import static java.lang.Math.ceil;
+import static java.lang.Math.min;
+import static java.lang.Math.pow;
+import static java.lang.Math.round;
+import static java.lang.String.format;
+
 import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
@@ -52,22 +68,6 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static android.graphics.Color.BLACK;
-import static android.graphics.Color.BLUE;
-import static android.graphics.Color.CYAN;
-import static android.graphics.Color.DKGRAY;
-import static android.graphics.Color.GRAY;
-import static android.graphics.Color.GREEN;
-import static android.graphics.Color.MAGENTA;
-import static android.graphics.Color.RED;
-import static android.graphics.Color.YELLOW;
-import static java.lang.Math.abs;
-import static java.lang.Math.ceil;
-import static java.lang.Math.min;
-import static java.lang.Math.pow;
-import static java.lang.Math.round;
-import static java.lang.String.format;
 
 /**
  * <p>
@@ -715,8 +715,13 @@ public class GraphView extends View {
         while (i < len) {
             final int mapSize = lineMap.size();
             Line line = lines[i];
-            line.color = colors[i + (mapSize > 0 ? (mapSize - 1) : 0)];
+
+            //indicates that there's more than one graph and therefore more colors should be used
+            if (mapSize + lines.length > 1) {
+                line.color = colors[i + mapSize - 1];
+            }
             if (mapSize == 5) {
+                Log.e(TAG, "add: Can't Have More than 5 Graphs", new UnsupportedOperationException());
                 return;
             }
 
@@ -1166,7 +1171,7 @@ public class GraphView extends View {
      * A utility class that holds values for a graph object that's used by the {@link GraphView}
      */
     public static class Line implements Parcelable {
-        public boolean hasCurrency = false;//by default it's false
+        public boolean hasCurrency;//by default it's false
         public String label;
         private float maxx;
         private float maxy;
@@ -1350,22 +1355,23 @@ public class GraphView extends View {
         public static class Builder {
             private String label;
             private int color;
-            private boolean hasCurrency;
+            private boolean hasCurrency = true;
 
             private final List<PointF> ps = new ArrayList<>();
 
+            @SuppressWarnings("UnusedReturnValue")
             public Builder setLabel(String label) {
                 this.label = label;
                 return this;
             }
 
-            public Builder setColor(int color) {
-                this.color = color;
+            public Builder setColor(double percent) {
+                color = percent < 0 ? Color.RED : GREEN;
                 return this;
             }
 
             public Builder setHasCurrency() {
-                return setHasCurrency(true);
+                return setHasCurrency(false);
             }
 
             public Builder setHasCurrency(boolean hasCurrency) {
@@ -1376,6 +1382,10 @@ public class GraphView extends View {
             public Builder add(PointF p) {
                 ps.add(p);
                 return this;
+            }
+
+            public Builder add(double x, double y) {
+                return add((float) x, (float) y);
             }
 
             public Builder add(float x, float y) {

@@ -3,6 +3,7 @@ package com.nemido.lib.utils;
 import androidx.annotation.NonNull;
 
 public enum ChronoUnit {
+    HOUR("Hour"),
     DAY("Day"),
     WEEK("Week"),
     MONTH("Month"),
