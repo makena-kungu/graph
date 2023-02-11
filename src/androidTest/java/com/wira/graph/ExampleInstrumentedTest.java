@@ -1,4 +1,4 @@
-package com.nemido.lib;
+package com.wira.graph;
 
 import android.content.Context;
 import android.text.SpannableString;

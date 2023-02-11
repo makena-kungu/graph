@@ -1,4 +1,4 @@
-package com.nemido.lib;
+package com.wira.graph.core;
 
 import android.graphics.Canvas;
 import android.graphics.LinearGradient;
@@ -7,6 +7,7 @@ import android.graphics.RadialGradient;
 import android.graphics.RectF;
 import android.graphics.Shader;
 
+import androidx.annotation.NonNull;
 import androidx.core.graphics.ColorUtils;
 
 import static android.graphics.Color.BLACK;
@@ -43,7 +44,7 @@ public class ShadowRenderer {
         drawRoundRectWithShadow(c, o, radius, elevation, BLACK);
     }
 
-    public void drawRoundRectWithShadow(Canvas c, RectF o, final float radius, final float elevation, int shadowColor) {
+    public void drawRoundRectWithShadow(@NonNull Canvas c, RectF o, final float radius, final float elevation, int shadowColor) {
         final int init = c.save();
         final float oRadius = elevation + radius;
 

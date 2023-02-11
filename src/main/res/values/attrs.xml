@@ -1,38 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="GraphView">
-        <attr name="labelTextSize" format="dimension" />
-        <attr name="android:textSize" format="dimension" />
-        <attr name="android:dashGap" />
-        <attr name="android:dashWidth" />
-        <attr name="clickedTextSize" format="dimension" />
-        <attr name="blur" format="dimension" />
-        <attr name="elevation" format="dimension" />
-        <attr name="lineWidth" format="dimension" />
-        <attr name="guideStrokeWidth" format="dimension" />
-        <attr name="showStrokeWidth" format="dimension" />
-        <attr name="strokeWidth" format="dimension" />
-        <attr name="valuesRadius" format="dimension" />
-        <attr name="xAxisWidth" format="dimension" />
-        <attr name="mAlpha" format="integer" />
-        <attr name="decorationsOn" format="boolean" />
-        <attr name="height">
+        <attr name="graphLabelTextSize" format="dimension" />
+        <attr name="graphTextSize" format="dimension" />
+        <attr name="graphClickedTextSize" format="dimension" />
+
+        <attr name="graphAlpha" format="integer" />
+        <attr name="graphBlur" format="dimension" />
+        <attr name="graphDecorationsOn" format="boolean" />
+        <attr name="graphDashGap" format="dimension" />
+        <attr name="graphDashWidth" format="dimension" />
+        <attr name="graphGuideStrokeWidth" format="dimension" />
+        <attr name="graphLabelElevation" format="dimension" />
+        <attr name="graphLineWidth" format="dimension" />
+        <attr name="graphShowStrokeWidth" format="dimension" />
+        <attr name="graphStrokeWidth" format="dimension" />
+        <attr name="graphValuesRadius" format="dimension" />
+        <attr name="graphXAxisWidth" format="dimension" />
+        <attr name="graphXAxisLabelIndicatorHeight" format="dimension" />
+        <attr name="graphXLabelStrokeWidth" format="dimension" />
+        <attr name="graphXLabelTextSize" format="dimension" />
+        <attr name="graphXLabelTextColor" format="color" />
+        <attr name="graphXLabelsIndicatorColor" format="color" />
+
+        <attr name="graphHeight">
             <enum name="big" value="0" />
             <enum name="small" value="1" />
         </attr>
-        <attr name="size">
+        <attr name="graphSize">
             <enum name="normal" value="0" />
             <enum name="mini" value="1" />
             <enum name="custom" value="2" />
         </attr>
-        <attr name="touch" format="float" />
+        <attr name="graphTouch" format="float" />
     </declare-styleable>
 
     <declare-styleable name="PieChart">
-        <attr name="showText" format="boolean" />
-        <attr name="labelPosition" format="enum">
+        <attr name="pieDividerPadding" format="dimension" />
+        <attr name="pieLabelPosition" format="enum">
             <enum name="left" value="0" />
             <enum name="right" value="1" />
         </attr>
+        <attr name="pieGap" format="dimension" />
+        <attr name="piePadding" format="dimension" />
+        <attr name="pieShowText" format="boolean" />
+        <attr name="pieStrokeWidth" format="dimension" />
+        <attr name="pieTextColor" format="color" />
+        <attr name="pieDividerColor" format="color" />
     </declare-styleable>
 </resources>

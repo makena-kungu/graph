@@ -1,19 +1,21 @@
-package com.nemido.lib;
+package com.wira.graph;
+
+import static com.wira.graph.GraphView.label;
+import static com.wira.graph.GraphView.parse;
+import static org.junit.Assert.assertEquals;
+import static java.lang.Math.ceil;
+import static java.lang.Math.pow;
 
 import android.text.SpannableString;
 import android.text.style.BulletSpan;
 
-import com.nemido.lib.utils.Period;
+import com.google.common.truth.Truth;
+import com.wira.core.period.Period;
 
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.nemido.lib.graph.GraphView.label;
-import static java.lang.Math.ceil;
-import static java.lang.Math.pow;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Example local unit test, which will execute on the development machine (host).
@@ -27,6 +29,13 @@ public class ExampleUnitTest {
     }
 
     @Test
+    public void parsing_float_works() {
+        float fifty = 50_000_000_000_000L;
+        final String l = label(fifty);
+        Truth.assertThat(parse(l)).isEqualTo(50);
+    }
+
+    @Test
     public void suffix_works() {
         float val = 50;
 
@@ -35,7 +44,7 @@ public class ExampleUnitTest {
         System.out.println(Float.parseFloat(label.replace("t", "")
                 .replace("b", "")
                 .replace("m", "")
-                .replace("k", ""))%3);
+                .replace("k", "")) % 3);
 
         List<String> labels = new ArrayList<>();
         final float maximum = maxy(91);
@@ -47,14 +56,14 @@ public class ExampleUnitTest {
                 .replace("m", "")
                 .replace("k", ""));
 
-        final int count = max%3 == 0 ? 3 : 2;
+        final int count = max % 3 == 0 ? 3 : 2;
 
         System.out.println("==================Looping==================");
         float i = 1;
         while (i <= count) {
             System.out.println("i = " + i + " count = " + count);
-            System.out.println(i/count);
-            final float v = (i++/count)*maximum;
+            System.out.println(i / count);
+            final float v = (i++ / count) * maximum;
             labels.add(label(v));
         }
 
@@ -95,14 +104,14 @@ public class ExampleUnitTest {
         //The graph doesn't occupy 80% of the graph area
         do {
             multiplicand /= 10;
-            maxy = (float) (ceil(max/multiplicand)*multiplicand);
-        } while (max/maxy < 0.8);
+            maxy = (float) (ceil(max / multiplicand) * multiplicand);
+        } while (max / maxy < 0.8);
 
         return maxy;
     }
 
     @Test
-    public void testDate(){
+    public void testDate() {
         Period p = Period.ofQuarter();
         System.out.println(p.getDuration());
 
@@ -122,9 +131,9 @@ public class ExampleUnitTest {
         SpannableString ss = new SpannableString(some);
         int j = 0;
         do {
-            ss.setSpan(new BulletSpan(), j, j+length, SpannableString.SPAN_INCLUSIVE_INCLUSIVE);
+            ss.setSpan(new BulletSpan(), j, j + length, SpannableString.SPAN_INCLUSIVE_INCLUSIVE);
             j += length;
-        }while(j<length);
+        } while (j < length);
         System.out.println(ss);
     }
 }

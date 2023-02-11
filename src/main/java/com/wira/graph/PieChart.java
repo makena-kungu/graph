@@ -1,6 +1,17 @@
-package com.nemido.lib.graph;
+package com.wira.graph;
+
+import static android.graphics.Color.BLACK;
+import static android.graphics.Color.BLUE;
+import static android.graphics.Color.CYAN;
+import static android.graphics.Color.GREEN;
+import static android.graphics.Color.MAGENTA;
+import static android.graphics.Color.RED;
+import static android.graphics.Color.YELLOW;
+import static android.graphics.Color.parseColor;
+import static java.lang.String.format;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
@@ -15,32 +26,21 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.graphics.ColorUtils;
 
-import com.nemido.lib.R;
-
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static android.graphics.Color.BLACK;
-import static android.graphics.Color.BLUE;
-import static android.graphics.Color.CYAN;
-import static android.graphics.Color.GREEN;
-import static android.graphics.Color.MAGENTA;
-import static android.graphics.Color.RED;
-import static android.graphics.Color.YELLOW;
-import static android.graphics.Color.parseColor;
-import static java.lang.String.format;
-import static java.util.Currency.getInstance;
-import static java.util.Locale.getDefault;
 
 public class PieChart extends View {
     private static final String TAG = "PieChart";
-    public static final String DOUBLES_FORMAT = "%,.1f";
-    private static final String CASH_FORMAT = "%s%,.2f";
+    private static final NumberFormat FORMAT = NumberFormat.getCurrencyInstance();
+    static {
+        FORMAT.setMaximumFractionDigits(2);
+    }
+
     public static final int[] colors = new int[]{GREEN, BLUE, RED, CYAN, MAGENTA,
             parseColor("#FFC000"),
             parseColor("#2196F3"),
@@ -55,12 +55,14 @@ public class PieChart extends View {
      */
     private static final float sRatio = 0.6f;
 
-    private final float strokeWidth;
-    private final float space;
+    private final int space;
     private final float keyBoundsHeight = 174;
     private final float largeTextSize;
     final float heightOfDivider = 1f;
-    private float padding;
+
+    private final int strokeWidth;
+    private final int padding;
+    private final int dividerPadding;
 
     private final AtomicReference<String> total = new AtomicReference<>("");
 
@@ -84,9 +86,11 @@ public class PieChart extends View {
     public PieChart(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
 
-        strokeWidth = 25.0f;
-        padding = 10.0f;
-        space = 5.0f;
+        TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.PieChart, defStyleAttr, 0);
+        strokeWidth = a.getDimensionPixelSize(R.styleable.PieChart_pieStrokeWidth, getResources().getDimensionPixelSize(R.dimen.default_pieStrokeWidth));
+        padding = a.getDimensionPixelSize(R.styleable.PieChart_piePadding, getResources().getDimensionPixelSize(R.dimen.default_piePadding));
+        dividerPadding = a.getDimensionPixelSize(R.styleable.PieChart_piePadding, getResources().getDimensionPixelSize(R.dimen.default_piePadding));
+        space = a.getDimensionPixelSize(R.styleable.PieChart_pieGap, 5);
 
         largeTextSize = getResources().getDimension(R.dimen.large_text_size);
         float mediumTextSize = getResources().getDimension(R.dimen.medium_text_size);
@@ -101,14 +105,15 @@ public class PieChart extends View {
         keyPaint.setStyle(Paint.Style.FILL);
 
         textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        textPaint.setColor(ColorUtils.setAlphaComponent(BLACK, 229));
+        textPaint.setColor(ColorUtils.setAlphaComponent(a.getColor(R.styleable.PieChart_pieTextColor, BLACK), 229));
         textPaint.setTextAlign(Paint.Align.LEFT);
         textPaint.setTextSize(mediumTextSize);
 
         dividerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        dividerPaint.setColor(ColorUtils.setAlphaComponent(BLACK, 200));
+        dividerPaint.setColor(ColorUtils.setAlphaComponent(a.getColor(R.styleable.PieChart_pieDividerColor, BLACK), 60));
         dividerPaint.setStyle(Paint.Style.STROKE);
 
+        a.recycle();
 //        genDummy();
     }
 
@@ -118,8 +123,7 @@ public class PieChart extends View {
         List<Pie> pies = new ArrayList<>();
         int i = 0;
         for (int color : colors) {
-            Pie pie = new Pie(label + " " + ++i, Math.random()*10000);
-            pie.color = color;
+            Pie pie = new Pie(label + " " + ++i, Math.random() * 10000, color);
             pies.add(pie);
         }
 
@@ -139,8 +143,8 @@ public class PieChart extends View {
             height = MeasureSpec.getSize(heightMeasureSpec);
         } else {
             //we calculate the height
-            height = (int) Math.ceil(width*sRatio);
-            height += (keyBoundsHeight + heightOfDivider)*size;
+            height = (int) Math.ceil(width * sRatio);
+            height += (keyBoundsHeight + heightOfDivider) * size;
         }
 
         setMeasuredDimension(width, height);
@@ -155,7 +159,7 @@ public class PieChart extends View {
 //        miscellaneous.inset(padding, padding);
 
         //The rest of the height depends on the size of the pie collection size
-        pieBounds.set(0, 0, w, sRatio*w);
+        pieBounds.set(0, 0, w, sRatio * w);
         miscellaneous.set(0, pieBounds.bottom, w, h);
 
         //We use the smallest dimension as the length of the sides of pieRect
@@ -166,14 +170,14 @@ public class PieChart extends View {
         float side = Math.min(height, width);
         pieRect.set(pieBounds);
         //Converting the pieRect into a square and centering it in the pieBounds
-        pieRect.inset((width - side)*0.5f, (height - side)*0.5f);
+        pieRect.inset((width - side) * 0.5f, (height - side) * 0.5f);
 
         //adding some padding so as to accommodate the stroke width of the pie that we'll be drawing
-        float inset = strokeWidth*2 + space;
+        int inset = strokeWidth * 2 + space;
         pieRect.inset(inset, inset);
 
-        padding = -padding;
-        pieBounds.inset(padding, padding);
+        inset = -padding;
+        pieBounds.inset(inset, inset);
         keyBounds.set(0, 0, 0, keyBoundsHeight);
     }
 
@@ -218,7 +222,7 @@ public class PieChart extends View {
         float kh = textPaint.getTextSize();
         key.right = key.bottom = kh;
         key.offset(centerX - key.centerX(), centerY - key.centerY());
-        float r = kh*.35f;
+        float r = kh * .35f;
         textPaint.setTextAlign(Paint.Align.LEFT);
         final int width = getWidth();
         int i = 0;
@@ -235,7 +239,7 @@ public class PieChart extends View {
             canvas.drawText(
                     pie.label,
                     interval,
-                    key.centerY() + rect.height()*.5f,
+                    key.centerY() + rect.height() * .5f,
                     textPaint
             );
 
@@ -244,8 +248,8 @@ public class PieChart extends View {
 
             //drawing the divider
             canvas.save();
-            canvas.translate(0, keyBounds.bottom + 0.5f*heightOfDivider);
-            canvas.drawLine(0, 0, width, 0, dividerPaint);
+            canvas.translate(0, keyBounds.bottom + 0.5f * heightOfDivider);
+            canvas.drawLine(dividerPadding, 0, width - dividerPadding, 0, dividerPaint);
             canvas.restore();
         }
         canvas.restoreToCount(saveCount);
@@ -255,7 +259,7 @@ public class PieChart extends View {
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(largeTextSize);
         textPaint.getTextBounds(total.get(), 0, total.get().length(), rect);
-        canvas.translate(pieBounds.centerX(), pieBounds.centerY() + rect.height()*0.5f);
+        canvas.translate(pieBounds.centerX(), pieBounds.centerY() + rect.height() * 0.5f);
         canvas.drawText(total.get(), 0, 0, textPaint);
         canvas.restore();
     }
@@ -284,8 +288,7 @@ public class PieChart extends View {
             );
         }
 
-        Locale l = getDefault();
-        total.set(format(l, CASH_FORMAT, getInstance(l).getSymbol(), sum));
+        total.set(FORMAT.format(sum));
         invalidate();
         requestLayout();
     }
@@ -295,7 +298,7 @@ public class PieChart extends View {
         private final double value;
         private float percentage;
         private float angle;
-        private int color;
+        private final int color;
 
         private Pie(@NonNull Parcel in) {
             label = in.readString();
@@ -305,14 +308,14 @@ public class PieChart extends View {
             color = in.readInt();
         }
 
-        public Pie(String label, double value) {
+        public Pie(String label, double value, int color) {
             this.value = value;
-            Locale l = getDefault();
             this.label = format(
                     "%s - %s",
                     label,
-                    format(l, CASH_FORMAT, getInstance(l).getSymbol(), this.value)
+                    FORMAT.format(value)
             );
+            this.color = color;
         }
 
         public String getLabel() {
@@ -329,7 +332,7 @@ public class PieChart extends View {
         }
 
         public void setAngle(int count) {
-            angle = percentage*(360 - (SPACE*count));
+            angle = percentage * (360 - (SPACE * count));
         }
 
         public static final Parcelable.Creator<Pie> CREATOR = new Parcelable.Creator<Pie>() {
